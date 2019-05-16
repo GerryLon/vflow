@@ -40,7 +40,7 @@ type PacketHeader struct {
 	Version   uint16 // Version of Flow Record format exported in this packet
 	Count     uint16 // The total number of records in the Export Packet
 	SysUpTime uint32 // Time in milliseconds since this device was first booted
-	UNIXSecs  uint32 // Time in seconds since 0000 UTC 197
+	UNIXSecs  uint32 // Time in seconds since 0000 UTC 1970
 	SeqNum    uint32 // Incremental sequence counter of all Export Packets
 	SrcID     uint32 // A 32-bit value that identifies the Exporter
 }
@@ -76,8 +76,8 @@ type TemplateRecord struct {
 
 // DecodedField represents a decoded field
 type DecodedField struct {
-	ID    uint16
-	Value interface{}
+	ID    uint16      `json:"I"`
+	Value interface{} `json:"V"`
 }
 
 // Decoder represents Netflow payload and remote address
@@ -331,8 +331,8 @@ func (d *Decoder) decodeData(tr TemplateRecord) ([]DecodedField, error) {
 		}
 
 		m, ok := ipfix.InfoModel[ipfix.ElementKey{
-			0,
-			tr.ScopeFieldSpecifiers[i].ElementID,
+			EnterpriseNo: 0,
+			ElementID:    tr.ScopeFieldSpecifiers[i].ElementID,
 		}]
 
 		if !ok {
@@ -353,8 +353,8 @@ func (d *Decoder) decodeData(tr TemplateRecord) ([]DecodedField, error) {
 		}
 
 		m, ok := ipfix.InfoModel[ipfix.ElementKey{
-			0,
-			tr.FieldSpecifiers[i].ElementID,
+			EnterpriseNo: 0,
+			ElementID:    tr.FieldSpecifiers[i].ElementID,
 		}]
 
 		if !ok {
@@ -380,11 +380,11 @@ func NewDecoder(raddr net.IP, b []byte) *Decoder {
 func (d *Decoder) Decode(mem MemCache) (*Message, error) {
 	var msg = new(Message)
 
-	// IPFIX Message Header decoding
+	// Netflow v9 Message Header decoding
 	if err := msg.Header.unmarshal(d.reader); err != nil {
 		return nil, err
 	}
-	// IPFIX Message Header validation
+	// Netflow v9 Message Header validation
 	if err := msg.Header.validate(); err != nil {
 		return nil, err
 	}
